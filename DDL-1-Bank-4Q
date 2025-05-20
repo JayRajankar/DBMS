@@ -1,83 +1,105 @@
--- 1. Table Creation
-
-CREATE TABLE Customer (
-    CustomerId INT PRIMARY KEY,
-    CustomerName VARCHAR(50) NOT NULL,
-    Phone VARCHAR(15) UNIQUE,
-    Email VARCHAR(50) UNIQUE,
-    Address VARCHAR(100) NOT NULL
+https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.scaler.com%2Ftopics%2Fer-diagram-for-bank-database%2F&psig=AOvVaw3_-f5Ix9NM88yKL2rL0jo1&ust=1747866847519000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCICE48WNs40DFQAAAAAdAAAAABAo
+https://www.scaler.com/topics/images/er-diagram-for-bank-database.webp
+CREATE TABLE Branch (
+    branch_id INT PRIMARY KEY,
+    banker_name VARCHAR(100),
+    assets DECIMAL(15,2),
+    branch_address VARCHAR(255)
 );
 
-CREATE TABLE Branch (
-    BranchId INT PRIMARY KEY,
-    BranchName VARCHAR(50) NOT NULL,
-    BranchAddress VARCHAR(100) NOT NULL
+CREATE TABLE Banker (
+    banker_id INT PRIMARY KEY,
+    banker_name VARCHAR(100),
+    branch_id INT,
+    FOREIGN KEY (branch_id) REFERENCES Branch(branch_id)
+);
+
+CREATE TABLE Customer (
+    customer_id INT PRIMARY KEY,
+    customer_name VARCHAR(100),
+    dob DATE,
+    mobileno VARCHAR(15)
 );
 
 CREATE TABLE Account (
-    AcctNo INT PRIMARY KEY,
-    CustomerId INT,
-    BranchId INT,
-    Balance DECIMAL(10,2) NOT NULL,
-    AcctType VARCHAR(20) NOT NULL,
-    FOREIGN KEY (CustomerId) REFERENCES Customer(CustomerId),
-    FOREIGN KEY (BranchId) REFERENCES Branch(BranchId)
+    account_id INT PRIMARY KEY,
+    account_balance DECIMAL(15,2),
+    account_type VARCHAR(50),
+    branch_id INT,
+    FOREIGN KEY (branch_id) REFERENCES Branch(branch_id)
 );
+
+CREATE TABLE Customer_Account (
+    customer_id INT,
+    account_id INT,
+    PRIMARY KEY (customer_id, account_id),
+    FOREIGN KEY (customer_id) REFERENCES Customer(customer_id),
+    FOREIGN KEY (account_id) REFERENCES Account(account_id)
+);
+
 
 CREATE TABLE Loan (
-    LoanId INT PRIMARY KEY,
-    CustomerId INT,
-    LoanAmount DECIMAL(10,2) NOT NULL,
-    LoanType VARCHAR(20) NOT NULL,
-    FOREIGN KEY (CustomerId) REFERENCES Customer(CustomerId)
+    loan_id INT PRIMARY KEY,
+    branch_id INT,
+    account_id INT,
+    issued_amount DECIMAL(15,2),
+    remaining_amount DECIMAL(15,2),
+    FOREIGN KEY (branch_id) REFERENCES Branch(branch_id),
+    FOREIGN KEY (account_id) REFERENCES Account(account_id)
 );
 
-CREATE TABLE BankTransaction (
-    TransId INT PRIMARY KEY,
-    AcctNo INT,
-    TransDate DATE NOT NULL,
-    TransAmount DECIMAL(10,2) NOT NULL,
-    TransType VARCHAR(20) NOT NULL,
-    FOREIGN KEY (AcctNo) REFERENCES Account(AcctNo)
+CREATE TABLE Loan_Payment (
+    loan_payment_id INT PRIMARY KEY,
+    loan_id INT,
+    amount DECIMAL(15,2),
+    FOREIGN KEY (loan_id) REFERENCES Loan(loan_id)
 );
 
--- 2. Views
+CREATE TABLE Credit_Card (
+    credit_card_id INT PRIMARY KEY,
+    customer_id INT,
+    account_id INT,
+    expiry_date DATE,
+    card_limit DECIMAL(12,2),
+    FOREIGN KEY (customer_id) REFERENCES Customer(customer_id),
+    FOREIGN KEY (account_id) REFERENCES Account(account_id)
+);
+
+
+
+
+
+-- Create Views on Two Tables Using JOIN Conditions
+-- View 1: Customer with Account Details
 
 CREATE VIEW CustomerAccountView AS
-SELECT c.CustomerId, c.CustomerName, a.AcctNo, a.Balance, a.AcctType
-FROM Customer c
-JOIN Account a ON c.CustomerId = a.CustomerId;
-
-CREATE VIEW LoanCustomerView AS
-SELECT l.LoanId, l.LoanAmount, l.LoanType, c.CustomerName, c.Phone
-FROM Loan l
-JOIN Customer c ON l.CustomerId = c.CustomerId;
-
--- 3. Index
-
-CREATE INDEX CustomerId_Index
-ON Customer (CustomerName ASC);
-
--- 4. Sample Data Insertion
-
-INSERT INTO Customer (CustomerId, CustomerName, Phone, Email, Address)
-VALUES
-(1, 'Alice Johnson', '1234567890', 'alice@example.com', '123 Elm Street'),
-(2, 'Bob Smith', '9876543210', 'bob@example.com', '456 Oak Avenue');
-
-INSERT INTO Branch (BranchId, BranchName, BranchAddress)
-VALUES
-(1, 'Downtown Branch', '10 Main Street'),
-(2, 'Uptown Branch', '99 River Road');
-
-INSERT INTO Account (AcctNo, CustomerId, BranchId, Balance, AcctType)
-VALUES
-(1001, 1, 1, 5000.00, 'Savings'),
-(1002, 2, 2, 15000.00, 'Current');
-
-INSERT INTO Loan (LoanId, CustomerId, LoanAmount, LoanType)
-VALUES
-(501, 1, 20000.00, 'Home'),
-(502, 2, 5000.00, 'Personal');
-
-INSERT INTO BankTransaction (TransId, AcctNo, TransDate, TransAmount, TransT
+SELECT 
+    c.customer_id,
+    c.customer_name,
+    c.dob,
+    c.mobileno,
+    a.account_id,
+    a.account_type,
+    a.account_balance,
+    a.branch_id
+FROM 
+    Customer c
+JOIN 
+    Customer_Account ca ON c.customer_id = ca.customer_id
+JOIN 
+    Account a ON ca.account_id = a.account_id;
+    
+-- 📌 View 2: Loan Details with Branch Info
+CREATE VIEW LoanBranchView AS
+SELECT 
+    l.loan_id,
+    l.account_id,
+    l.issued_amount,
+    l.remaining_amount,
+    b.branch_id,
+    b.branch_address,
+    b.assets
+FROM 
+    Loan l
+JOIN 
+    Branch b ON l.branch_id = b.bran
