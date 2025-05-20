@@ -1,70 +1,67 @@
-Here are **all the triggers combined** from the images and the text you've provided, formatted clearly in **MySQL / PL-SQL style**:
+-- Library Table
+CREATE TABLE Library (
+    bid INT PRIMARY KEY,
+    bname VARCHAR(100),
+    doi DATE,
+    status VARCHAR(20)
+);
 
----
+-- Audit Table
+CREATE TABLE Library_Audit (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    bid INT,
+    bname VARCHAR(100),
+    noc INT,
+    timestampofquery TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    fine INT DEFAULT 0
+);
 
-### ✅ `AFTER INSERT` Trigger on `Library`
+-- Trigger 1: NOC adjustment
+DELIMITER //
 
-```sql
-DELIMITER $$
-
-CREATE TRIGGER UpdateNocTrigger_Insert
+CREATE TRIGGER trg_adjust_noc
 AFTER INSERT ON Library
 FOR EACH ROW
 BEGIN
-    DECLARE current_noc INT;
+    DECLARE v_noc_change INT DEFAULT 0;
 
-    SELECT COALESCE(noc, 0)
-    INTO current_noc
-    FROM Library_Audit
-    WHERE bid = NEW.bid
-    LIMIT 1;
-
-    IF NEW.status = 'RETURN' THEN
-        SET current_noc = current_noc + 1;
-    ELSEIF NEW.status = 'ISSUE' THEN
-        SET current_noc = current_noc - 1;
+    IF NEW.status = 'ISSUE' THEN
+        SET v_noc_change = -1;
+    ELSEIF NEW.status = 'RETURN' THEN
+        SET v_noc_change = 1;
     END IF;
 
-    DELETE FROM Library_Audit WHERE bid = NEW.bid;
+    INSERT INTO Library_Audit (bid, bname, noc)
+    VALUES (NEW.bid, NEW.bname, v_noc_change);
+END;
+//
 
-    INSERT INTO Library_Audit (bid, bname, noc, timestampofquery, action)
-    VALUES (NEW.bid, NEW.bname, current_noc, NOW(), NEW.status);
-END$$
-
-DELIMITER ;
-```
-
----
-
-### ✅ `AFTER UPDATE OR DELETE` Trigger on `Library`
-
-```sql
-DELIMITER $$
-
-CREATE TRIGGER LibraryAuditTrigger
-AFTER UPDATE OR DELETE ON Library
+-- Trigger 2: Fine check without updating Library table
+CREATE TRIGGER trg_check_fine
+AFTER UPDATE ON Library
 FOR EACH ROW
 BEGIN
-    IF OLD.bid IS NOT NULL THEN
-        INSERT INTO Library_Audit (bid, bname, noc, timestampofquery, action)
-        VALUES (
-            OLD.bid,
-            OLD.bname,
-            OLD.noc,
-            NOW(),
-            CASE 
-                WHEN OLD.bid = NEW.bid THEN 'UPDATE'
-                ELSE 'DELETE'
-            END
-        );
+    DECLARE v_days_late INT DEFAULT 0;
+    DECLARE v_fine INT DEFAULT 0;
+
+    SET v_days_late = DATEDIFF(CURDATE(), NEW.doi);
+
+    IF v_days_late > 20 AND NEW.status = 'RETURN' THEN
+        SET v_fine = v_days_late * 10;
+
+        INSERT INTO Library_Audit (bid, bname, noc, fine)
+        VALUES (NEW.bid, NEW.bname, 0, v_fine);
     END IF;
-END$$
+END;
+//
 
 DELIMITER ;
-```
 
----
+-- Insert old issued book (25 days ago)
+INSERT INTO Library VALUES (101, 'C Programming', CURDATE() - INTERVAL 25 DAY, 'RETURN');
 
-### Optional Improvement Suggestion:
+-- Trigger runs here
+UPDATE Library SET status = 'RETURN' WHERE bid = 101;
 
-You may also want to include **fine calculation** if the `doi` exceeds 20 days before `NOW()` (based on your earlier ask). Let me know if you'd like me to integrate that as well.
+-- Check audit
+SELECT * FROM Library_Audit;
