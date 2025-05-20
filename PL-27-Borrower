@@ -75,3 +75,118 @@ END;
 DELIMITER ;
 
 CALL process_fine(101, 'introduction to sql');
+
+----------------------------------------------------------------------------------
+-- Step 1: Create the employee_salary table
+CREATE TABLE employee_salary (
+    emp_no INT PRIMARY KEY,
+    basic INT,
+    hra INT,
+    da INT,
+    total_deduction INT,
+    net_salary INT,
+    gross_salary INT
+);
+
+-- Step 2: Insert sample data
+INSERT INTO employee_salary VALUES
+(101, 50000, 10000, 5000, 7000, 58000, 65000),
+(102, 60000, 12000, 6000, 8000, 70000, 78000),
+(103, 45000, 9000, 4500, 6500, 50000, 56500),
+(104, 70000, 14000, 7000, 10000, 87000, 97000);
+
+-- Step 3: Create the procedure
+DELIMITER //
+
+CREATE PROCEDURE calculate_tax()
+BEGIN
+    -- All DECLAREs must come first
+    DECLARE x INT DEFAULT 0;
+    DECLARE y INT DEFAULT 0;
+    DECLARE z INT DEFAULT 0;
+    DECLARE a INT DEFAULT 0;
+    DECLARE b INT DEFAULT 0;
+    DECLARE c INT DEFAULT 0;
+    DECLARE d INT DEFAULT 0;
+    DECLARE finished INT DEFAULT 0;
+    DECLARE tax INT;
+
+    -- Cursor and handler declarations
+    DECLARE cur CURSOR FOR 
+        SELECT emp_no, basic, hra, da, total_deduction, net_salary, gross_salary 
+        FROM employee_salary 
+        ORDER BY emp_no;
+
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET finished = 1;
+
+    -- Create a temporary table to store results
+    CREATE TEMPORARY TABLE IF NOT EXISTS tax_result (
+        emp_no INT,
+        gross_salary INT,
+        tax INT
+    );
+
+    DELETE FROM tax_result;
+
+    OPEN cur;
+
+    emp_loop: LOOP
+        FETCH cur INTO x, y, z, a, b, c, d;
+        IF finished = 1 THEN 
+            LEAVE emp_loop;
+        END IF;
+
+        SET tax = d * 0.1;
+
+        INSERT INTO tax_result VALUES (x, d, tax);
+    END LOOP;
+
+    CLOSE cur;
+
+    -- Show the results
+    SELECT * FROM tax_result;
+END;
+//
+
+DELIMITER ;
+
+-- Step 4: Call the procedure
+CALL calculate_tax();
+---------------------------------------------------------------
+
+-- Step 1: Create the employee_salary table
+CREATE TABLE employee_salary (
+    emp_no INT PRIMARY KEY,
+    basic INT,
+    hra INT,
+    da INT,
+    total_deduction INT,
+    net_salary INT,
+    gross_salary INT
+);
+
+-- Step 2: Insert sample data
+INSERT INTO employee_salary VALUES
+(101, 50000, 10000, 5000, 7000, 58000, 65000),
+(102, 60000, 12000, 6000, 8000, 70000, 78000),
+(103, 45000, 9000, 4500, 6500, 50000, 56500),
+(104, 70000, 14000, 7000, 10000, 87000, 97000);
+
+-- Step 3: Create the stored procedure
+DELIMITER //
+
+CREATE PROCEDURE calculate_tax_simple()
+BEGIN
+    SELECT 
+        emp_no, 
+        gross_salary, 
+        gross_salary * 0.1 AS tax
+    FROM employee_salary;
+END;
+//
+
+DELIMITER ;
+
+-- Step 4: Call the procedure
+CALL calculate_tax_simple();
+
