@@ -1,0 +1,70 @@
+Here are **all the triggers combined** from the images and the text you've provided, formatted clearly in **MySQL / PL-SQL style**:
+
+---
+
+### ✅ `AFTER INSERT` Trigger on `Library`
+
+```sql
+DELIMITER $$
+
+CREATE TRIGGER UpdateNocTrigger_Insert
+AFTER INSERT ON Library
+FOR EACH ROW
+BEGIN
+    DECLARE current_noc INT;
+
+    SELECT COALESCE(noc, 0)
+    INTO current_noc
+    FROM Library_Audit
+    WHERE bid = NEW.bid
+    LIMIT 1;
+
+    IF NEW.status = 'RETURN' THEN
+        SET current_noc = current_noc + 1;
+    ELSEIF NEW.status = 'ISSUE' THEN
+        SET current_noc = current_noc - 1;
+    END IF;
+
+    DELETE FROM Library_Audit WHERE bid = NEW.bid;
+
+    INSERT INTO Library_Audit (bid, bname, noc, timestampofquery, action)
+    VALUES (NEW.bid, NEW.bname, current_noc, NOW(), NEW.status);
+END$$
+
+DELIMITER ;
+```
+
+---
+
+### ✅ `AFTER UPDATE OR DELETE` Trigger on `Library`
+
+```sql
+DELIMITER $$
+
+CREATE TRIGGER LibraryAuditTrigger
+AFTER UPDATE OR DELETE ON Library
+FOR EACH ROW
+BEGIN
+    IF OLD.bid IS NOT NULL THEN
+        INSERT INTO Library_Audit (bid, bname, noc, timestampofquery, action)
+        VALUES (
+            OLD.bid,
+            OLD.bname,
+            OLD.noc,
+            NOW(),
+            CASE 
+                WHEN OLD.bid = NEW.bid THEN 'UPDATE'
+                ELSE 'DELETE'
+            END
+        );
+    END IF;
+END$$
+
+DELIMITER ;
+```
+
+---
+
+### Optional Improvement Suggestion:
+
+You may also want to include **fine calculation** if the `doi` exceeds 20 days before `NOW()` (based on your earlier ask). Let me know if you'd like me to integrate that as well.
