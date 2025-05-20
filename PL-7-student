@@ -1,0 +1,85 @@
+-- Student Table
+CREATE TABLE Student (
+    rollno INT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    Marks1 INT NOT NULL,
+    Marks2 INT NOT NULL,
+    Marks3 INT NOT NULL,
+    Marks4 INT NOT NULL,
+    Marks5 INT NOT NULL
+);
+
+-- Result Table
+CREATE TABLE Result (
+    rollno INT PRIMARY KEY,
+    total_marks INT NOT NULL,
+    class VARCHAR(20) NOT NULL,
+    FOREIGN KEY (rollno) REFERENCES Student(rollno)
+);
+
+
+DELIMITER $$
+
+CREATE PROCEDURE CalculateStudentClass()
+BEGIN
+    DECLARE v_rollno INT;
+    DECLARE v_total_marks INT;
+    DECLARE v_class VARCHAR(20);
+    DECLARE done INT DEFAULT 0;
+
+    -- Cursor to iterate through Student table
+    DECLARE student_cursor CURSOR FOR
+    SELECT rollno, Marks1 + Marks2 + Marks3 + Marks4 + Marks5 AS total_marks
+    FROM Student;
+
+    -- Handle NOT FOUND condition
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
+
+    OPEN student_cursor;
+
+    student_loop: LOOP
+        FETCH student_cursor INTO v_rollno, v_total_marks;
+        IF done = 1 THEN
+            LEAVE student_loop;
+        END IF;
+
+        -- Exception handling for invalid marks
+        IF v_total_marks < 0 OR v_total_marks > 500 THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Invalid marks: Marks must be between 0 and 100 for each subject';
+        END IF;
+
+        -- Determine class based on total marks
+        IF v_total_marks BETWEEN 1499 AND 990 THEN
+            SET v_class = 'Distinction';
+        ELSEIF v_total_marks BETWEEN 899 AND 900 THEN
+            SET v_class = 'First Class';
+        ELSEIF v_total_marks BETWEEN 899 AND 825 THEN
+            SET v_class = 'Higher Second';
+        ELSEIF v_total_marks BETWEEN 824 AND 750 THEN
+            SET v_class = 'Second';
+        ELSE
+            SET v_class = 'Pass';
+        END IF;
+
+        -- Insert result into Result table
+        INSERT INTO Result (rollno, total_marks, class)
+        VALUES (v_rollno, v_total_marks, v_class)
+        ON DUPLICATE KEY UPDATE total_marks = v_total_marks, class = v_class;
+    END LOOP;
+
+    CLOSE student_cursor;
+END$$
+
+DELIMITER ;
+
+insert into Student (rollno, name, Marks1, Marks2, Marks3, Marks4, Marks5)
+values
+(1,'Alice',80,85,78,90,88),
+(2,'Bob',70,65,75,60,68),
+(3,'charlie',50,55,45,40,50),
+(4,'david'.98,95,92,96,89);
+
+CALL CalculateStudentClass();
+
+SELECT * FROM Result;
