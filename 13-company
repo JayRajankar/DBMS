@@ -1,0 +1,86 @@
+15: Creating and Querying the COMPANY Database
+Creating Tables
+sql
+CopyEdit
+CREATE TABLE EMPLOYEE (
+    Fname VARCHAR(50),
+    Minit CHAR(1),
+    Lname VARCHAR(50),
+    Ssn CHAR(9) PRIMARY KEY,
+    Bdate DATE,
+    Address VARCHAR(255),
+    Sex CHAR(1),
+    Salary DECIMAL(10,2),
+    Dno INT
+);
+
+CREATE TABLE DEPARTMENT (
+    Dname VARCHAR(100),
+    Dno INT PRIMARY KEY,
+    Mgr_ssn CHAR(9),
+    Mgr_start_date DATE,
+    FOREIGN KEY (Mgr_ssn) REFERENCES EMPLOYEE(Ssn)
+);
+
+CREATE TABLE DEPT_LOCATIONS (
+    Dnumber INT,
+    Dlocation VARCHAR(100),
+    FOREIGN KEY (Dnumber) REFERENCES DEPARTMENT(Dno)
+);
+
+CREATE TABLE PROJECT (
+    Pname VARCHAR(100),
+    Pnumber INT PRIMARY KEY,
+    Plocation VARCHAR(100),
+    Dno INT,
+    FOREIGN KEY (Dno) REFERENCES DEPARTMENT(Dno)
+);
+
+CREATE TABLE WORKS_ON (
+    Essn CHAR(9),
+    Pno INT,
+    Hours DECIMAL(5,2),
+    FOREIGN KEY (Essn) REFERENCES EMPLOYEE(Ssn),
+    FOREIGN KEY (Pno) REFERENCES PROJECT(Pnumber)
+);
+
+CREATE TABLE DEPENDENT (
+    Essn CHAR(9),
+    Dependent_name VARCHAR(50),
+    Sex CHAR(1),
+    Bdate DATE,
+    Relationship VARCHAR(50),
+    FOREIGN KEY (Essn) REFERENCES EMPLOYEE(Ssn)
+);
+________________________________________
+Queries
+1. Projects in ‘Stafford’ with Department Details
+sql
+CopyEdit
+SELECT P.Pnumber, P.Dno, E.Lname, E.Address, E.Bdate
+FROM PROJECT P
+JOIN DEPARTMENT D ON P.Dno = D.Dno
+JOIN EMPLOYEE E ON D.Mgr_ssn = E.Ssn
+WHERE P.Plocation = 'Stafford';
+2. Projects involving an employee or managed by ‘Smith’
+sql
+CopyEdit
+SELECT DISTINCT P.Pnumber
+FROM PROJECT P
+JOIN DEPARTMENT D ON P.Dno = D.Dno
+JOIN EMPLOYEE M ON D.Mgr_ssn = M.Ssn
+LEFT JOIN WORKS_ON W ON P.Pnumber = W.Pno
+LEFT JOIN EMPLOYEE E ON W.Essn = E.Ssn
+WHERE E.Lname = 'Smith' OR M.Lname = 'Smith';
+3. Employees in Houston, Texas
+sql
+CopyEdit
+SELECT * FROM EMPLOYEE WHERE Address LIKE '%Houston, Texas%';
+4. Salary increase for employees on ‘ProductX’
+sql
+CopyEdit
+SELECT E.Ssn, E.Fname, E.Lname, E.Salary * 1.10 AS New_Salary
+FROM EMPLOYEE E
+JOIN WORKS_ON W ON E.Ssn = W.Essn
+JOIN PROJECT P ON W.Pno = P.Pnumber
+WHERE P.Pname = 'ProductX';
