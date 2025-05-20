@@ -1,3 +1,16 @@
+9.PL/SQL code block: Use of Control structure and Exception handling is mandatory. Write a PL/SQL block of code for the following requirements:- 
+Schema: 
+1. Borrower(Rollin, Name, DateofIssue, NameofBook, Status) 
+2. Fine(Roll_no,Date,Amt) 
+3. Library (bid, bname, doi, status,noc)
+4. transaction (tid,bid, bname, status)
+1.Accept roll_no & name of book from user. 
+2.Check the number of days (from date of issue), if days are between 15 to 30 then fine amount will be Rs 5per day. 
+3.If no. of days>30, per day fine will be Rs 50 per day & for days less than 30, Rs. 5 per day. 
+4.After submitting the book, status will change from I to R.
+5.Update the noc in library according to the transaction made.  Increase the noc if status is RETURN, Decrease noc if status is ISSUE.
+6.If condition of fine is true, then details will be stored into fine table. 
+
 CREATE TABLE Borrower (
     Rollin INT NOT NULL,
     Name VARCHAR(100),
