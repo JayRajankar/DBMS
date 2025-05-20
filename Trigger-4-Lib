@@ -1,0 +1,86 @@
+Here is the **complete and full SQL code** to create a `Library` table, an `Library_Audit` table, and triggers that log all **updates and deletions** from the `Library` table into the `Library_Audit` table.
+
+> ✅ This version is for **MySQL** (most common for trigger-based logging). If you need a **PostgreSQL** or **SQL Server** version, let me know.
+
+---
+
+### ✅ Step-by-Step Full Code for MySQL
+
+```sql
+-- Step 1: Create the main Library table
+CREATE TABLE Library (
+    book_id INT PRIMARY KEY,
+    title VARCHAR(255),
+    author VARCHAR(255),
+    genre VARCHAR(100),
+    issued_to VARCHAR(100)
+);
+
+-- Step 2: Create the audit table to store old records
+CREATE TABLE Library_Audit (
+    audit_id INT PRIMARY KEY AUTO_INCREMENT,
+    action_type VARCHAR(10),     -- 'UPDATE' or 'DELETE'
+    book_id INT,
+    title VARCHAR(255),
+    author VARCHAR(255),
+    genre VARCHAR(100),
+    issued_to VARCHAR(100),
+    action_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Step 3: Create the trigger for UPDATE operations
+DELIMITER $$
+
+CREATE TRIGGER after_library_update
+AFTER UPDATE ON Library
+FOR EACH ROW
+BEGIN
+    INSERT INTO Library_Audit (action_type, book_id, title, author, genre, issued_to)
+    VALUES ('UPDATE', OLD.book_id, OLD.title, OLD.author, OLD.genre, OLD.issued_to);
+END$$
+
+DELIMITER ;
+
+-- Step 4: Create the trigger for DELETE operations
+DELIMITER $$
+
+CREATE TRIGGER after_library_delete
+AFTER DELETE ON Library
+FOR EACH ROW
+BEGIN
+    INSERT INTO Library_Audit (action_type, book_id, title, author, genre, issued_to)
+    VALUES ('DELETE', OLD.book_id, OLD.title, OLD.author, OLD.genre, OLD.issued_to);
+END$$
+
+DELIMITER ;
+```
+
+---
+
+### ✅ Test Example (Optional)
+
+To test that it's working correctly, you can run:
+
+```sql
+-- Insert a record
+INSERT INTO Library VALUES (1, '1984', 'George Orwell', 'Dystopian', 'Student A');
+
+-- Update the record
+UPDATE Library SET issued_to = 'Student B' WHERE book_id = 1;
+
+-- Delete the record
+DELETE FROM Library WHERE book_id = 1;
+
+-- Check the audit log
+SELECT * FROM Library_Audit;
+```
+
+---
+
+Let me know if you'd like to include:
+
+* Who made the change (user tracking)
+* PostgreSQL-compatible version
+* JSON columns or extended auditing features
+
+I'm happy to help!
