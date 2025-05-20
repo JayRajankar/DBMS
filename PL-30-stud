@@ -1,20 +1,3 @@
-Here's a **stored procedure named `proc_Grade`** that categorizes students based on their `total_marks` from the `Stud_Marks` table and inserts the result into the `Result` table using your provided grading rules.
-
----
-
-### ✅ Assumptions
-
-* Table `Stud_Marks(name, total_marks)` contains students and their marks.
-* Table `Result(Roll, Name, Class)` will store categorized results.
-* `Roll` is auto-incremented or generated separately (we’ll assume it for now).
-
----
-
-### ✅ Step-by-Step Solution
-
-#### 1. Create the Tables (if not already present)
-
-```sql
 CREATE TABLE Stud_Marks (
     name VARCHAR(50),
     total_marks INT
@@ -25,11 +8,7 @@ CREATE TABLE Result (
     Name VARCHAR(50),
     Class VARCHAR(30)
 );
-```
 
-#### 2. Create the Stored Procedure
-
-```sql
 DELIMITER $$
 
 CREATE PROCEDURE proc_Grade()
@@ -50,7 +29,6 @@ BEGIN
             LEAVE read_loop;
         END IF;
 
-        -- Determine class
         IF v_marks BETWEEN 990 AND 1500 THEN
             SET v_class = 'Distinction';
         ELSEIF v_marks BETWEEN 900 AND 989 THEN
@@ -61,7 +39,6 @@ BEGIN
             SET v_class = 'No Class';
         END IF;
 
-        -- Insert result
         INSERT INTO Result (Name, Class)
         VALUES (v_name, v_class);
     END LOOP;
@@ -70,45 +47,3 @@ BEGIN
 END$$
 
 DELIMITER ;
-```
-
----
-
-### ✅ 3. Call the Procedure
-
-```sql
-CALL proc_Grade();
-```
-
----
-
-### ✅ 4. View the Results
-
-```sql
-SELECT * FROM Result;
-```
-
----
-
-### 📝 Example Input
-
-```sql
-INSERT INTO Stud_Marks VALUES
-('Alice', 1450),
-('Bob', 950),
-('Charlie', 875),
-('Dave', 800);
-```
-
-### 📝 Output from `Result` after running procedure
-
-| Roll | Name    | Class               |
-| ---- | ------- | ------------------- |
-| 1    | Alice   | Distinction         |
-| 2    | Bob     | First Class         |
-| 3    | Charlie | Higher Second Class |
-| 4    | Dave    | No Class            |
-
----
-
-Let me know if you want to auto-generate Roll numbers differently or also store grades in the `Stud_Marks` table itself.
