@@ -1,4 +1,89 @@
+// Use database
+use universityDB
 
+// Create Students collection with sample documents
+db.Students.insertMany([
+  { stud_id: 1, stud_name: "Rahul", stud_addr: "Pune", stud_marks: 78 },
+  { stud_id: 2, stud_name: "Sneha", stud_addr: "Mumbai", stud_marks: 88 },
+  { stud_id: 3, stud_name: "Amit", stud_addr: "Delhi", stud_marks: 67 },
+  { stud_id: 4, stud_name: "Priya", stud_addr: "Pune", stud_marks: 91 },
+  { stud_id: 5, stud_name: "Arjun", stud_addr: "Bangalore", stud_marks: 83 }
+])
+
+// Create single field index on stud_name
+db.Students.createIndex({ stud_name: 1 })
+
+// Create compound index on stud_addr and stud_marks
+db.Students.createIndex({ stud_addr: 1, stud_marks: -1 })
+
+// Create unique index on stud_id
+db.Students.createIndex({ stud_id: 1 }, { unique: true })
+
+// Create text index on stud_name and stud_addr
+db.Students.createIndex({ stud_name: "text", stud_addr: "text" })
+
+// Query using index on stud_name
+db.Students.find({ stud_name: "Priya" })
+
+// Query using compound index
+db.Students.find({ stud_addr: "Pune" }).sort({ stud_marks: -1 })
+
+// Query using text search
+db.Students.find({ $text: { $search: "Pune" } })
+
+// Check index usage
+db.Students.find({ stud_name: "Priya" }).explain("executionStats")
+
+// Use database
+use universityDB
+
+// Insert more documents
+db.Students.insertMany([
+  { stud_id: 6, stud_name: "Kiran", stud_addr: "Nagpur", stud_marks: 55 },
+  { stud_id: 7, stud_name: "Meera", stud_addr: "Pune", stud_marks: 95 },
+  { stud_id: 8, stud_name: "Tarun", stud_addr: "Delhi", stud_marks: 65 },
+  { stud_id: 9, stud_name: "Neha", stud_addr: "Mumbai", stud_marks: 85 },
+  { stud_id: 10, stud_name: "Rohit", stud_addr: "Bangalore", stud_marks: 70 }
+])
+
+// Find students with marks greater than 80
+db.Students.find({ stud_marks: { $gt: 80 } })
+
+// Find students sorted by marks descending
+db.Students.find().sort({ stud_marks: -1 })
+
+// Find top 3 students by marks
+db.Students.find().sort({ stud_marks: -1 }).limit(3)
+
+// Count number of students from Pune
+db.Students.countDocuments({ stud_addr: "Pune" })
+
+// Project only names and marks of students
+db.Students.find({}, { stud_name: 1, stud_marks: 1, _id: 0 })
+
+// Update student marks by 5 for those scoring below 60
+db.Students.updateMany(
+  { stud_marks: { $lt: 60 } },
+  { $inc: { stud_marks: 5 } }
+)
+
+// Delete student with stud_id = 10
+db.Students.deleteOne({ stud_id: 10 })
+
+// Aggregate: Average marks of students per city
+db.Students.aggregate([
+  { $group: { _id: "$stud_addr", avgMarks: { $avg: "$stud_marks" } } }
+])
+
+// Create index on stud_marks
+db.Students.createIndex({ stud_marks: 1 })
+
+// Drop index on stud_name
+db.Students.dropIndex("stud_name_1")
+
+// Drop all indexes except _id
+db.Students.dropIndexes()
+------------------------------------------------------------------------------------------------------
 Certainly! Let’s dive deeper into **indexing and querying in MongoDB** using the `Students` collection. We'll break it down conceptually and practically:
 
 ---
