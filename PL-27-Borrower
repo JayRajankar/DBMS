@@ -1,0 +1,121 @@
+Here's the **complete solution** for your PL/SQL assignment, including:
+
+1. Table creation for `Borrower` and `Fine`
+2. Sample insert statements
+3. The full PL/SQL block as requested (with user input, fine logic, control structures, and exception handling)
+
+---
+
+### 🧱 Step 1: Create Tables
+
+```sql
+-- Borrower Table
+CREATE TABLE Borrower (
+    Rollin        NUMBER PRIMARY KEY,
+    Name          VARCHAR2(50),
+    DateofIssue   DATE,
+    NameofBook    VARCHAR2(100),
+    Status        CHAR(1) -- 'I' for Issued, 'R' for Returned
+);
+
+-- Fine Table
+CREATE TABLE Fine (
+    Roll_no   NUMBER,
+    Date      DATE,
+    Amt       NUMBER,
+    FOREIGN KEY (Roll_no) REFERENCES Borrower(Rollin)
+);
+```
+
+---
+
+### 🧪 Step 2: Insert Sample Data
+
+```sql
+-- Sample Borrowers
+INSERT INTO Borrower VALUES (101, 'Aryan', TO_DATE('2024-04-10', 'YYYY-MM-DD'), 'Atomic Habits', 'I');
+INSERT INTO Borrower VALUES (102, 'Riya', TO_DATE('2024-05-01', 'YYYY-MM-DD'), 'Wings of Fire', 'I');
+INSERT INTO Borrower VALUES (103, 'Neha', TO_DATE('2024-05-15', 'YYYY-MM-DD'), 'The Alchemist', 'R');
+```
+
+---
+
+### ✅ Step 3: PL/SQL Code Block
+
+```sql
+SET SERVEROUTPUT ON;
+
+DECLARE
+    v_rollin        Borrower.Rollin%TYPE := &Enter_Rollin; -- user input
+    v_bookname      Borrower.NameofBook%TYPE := '&Enter_Book_Name'; -- user input
+    v_dateofissue   DATE;
+    v_status        CHAR(1);
+    v_days          NUMBER;
+    v_fine          NUMBER := 0;
+
+BEGIN
+    -- Fetch date of issue and status
+    SELECT DateofIssue, Status
+    INTO v_dateofissue, v_status
+    FROM Borrower
+    WHERE Rollin = v_rollin AND NameofBook = v_bookname;
+
+    IF v_status = 'I' THEN
+        v_days := TRUNC(SYSDATE - v_dateofissue);
+
+        -- Calculate fine
+        IF v_days BETWEEN 15 AND 30 THEN
+            v_fine := v_days * 5;
+        ELSIF v_days > 30 THEN
+            v_fine := (30 * 5) + ((v_days - 30) * 50);
+        END IF;
+
+        -- Update status
+        UPDATE Borrower
+        SET Status = 'R'
+        WHERE Rollin = v_rollin AND NameofBook = v_bookname;
+
+        -- Insert fine if applicable
+        IF v_fine > 0 THEN
+            INSERT INTO Fine (Roll_no, Date, Amt)
+            VALUES (v_rollin, SYSDATE, v_fine);
+        END IF;
+
+        DBMS_OUTPUT.PUT_LINE('Book returned successfully.');
+        IF v_fine > 0 THEN
+            DBMS_OUTPUT.PUT_LINE('Fine amount: Rs. ' || v_fine);
+        ELSE
+            DBMS_OUTPUT.PUT_LINE('No fine applicable.');
+        END IF;
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Book is already returned.');
+    END IF;
+
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('No such record found.');
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('An error occurred: ' || SQLERRM);
+END;
+/
+```
+
+---
+
+### 🧾 Sample Run
+
+If you input:
+
+```text
+Enter_Rollin = 101
+Enter_Book_Name = 'Atomic Habits'
+```
+
+And the current date is `2025-05-20`, output will be:
+
+```
+Book returned successfully.
+Fine amount: Rs. 1800
+```
+
+Let me know if you want this converted into a **stored procedure** or integrated with a trigger.
