@@ -1,38 +1,44 @@
-DELIMITER $$
+-- Step 1: Create Tables
+CREATE TABLE n_rollcall (
+    roll_no INT PRIMARY KEY,
+    name VARCHAR(50),
+    dateofentry DATE
+);
 
-CREATE PROCEDURE merge_rollcall()
+CREATE TABLE o_rollcall (
+    roll_no INT PRIMARY KEY,
+    name VARCHAR(50),
+    dateofentry DATE
+);
+
+-- Step 2: Insert Data
+INSERT INTO n_rollcall VALUES 
+(101, 'rahul', '2024-04-10'),
+(102, 'neha', '2024-04-12'),
+(103, 'amit', '2024-04-15'),
+(104, 'priya', '2024-04-18');
+
+INSERT INTO o_rollcall VALUES 
+(102, 'neha', '2024-04-12'),
+(104, 'priya', '2024-04-18');
+
+DELIMITER //
+
+CREATE PROCEDURE merge_rollcall(
+    IN user_roll INT,
+    IN user_name VARCHAR(50),
+    IN user_date DATE
+)
 BEGIN
-  DECLARE done INT DEFAULT FALSE;
-  DECLARE v_roll_no INT;
-  DECLARE v_name VARCHAR(100);
-  DECLARE v_course VARCHAR(100);
-  
-  DECLARE cur CURSOR FOR SELECT ROLL_NO, NAME, COURSE FROM N_RollCall;
-  DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
-
-  OPEN cur;
-  
-  read_loop: LOOP
-    FETCH cur INTO v_roll_no, v_name, v_course;
-    IF done THEN
-      LEAVE read_loop;
+    IF NOT EXISTS (SELECT 1 FROM o_rollcall WHERE roll_no = user_roll) THEN
+        INSERT INTO o_rollcall VALUES (user_roll, user_name, user_date);
     END IF;
 
-    -- Check if record exists
-    IF NOT EXISTS (
-      SELECT 1 FROM O_RollCall 
-      WHERE ROLL_NO = v_roll_no AND NAME = v_name AND COURSE = v_course
-    ) THEN
-      INSERT INTO O_RollCall (ROLL_NO, NAME, COURSE)
-      VALUES (v_roll_no, v_name, v_course);
-    END IF;
-    
-  END LOOP;
-
-  CLOSE cur;
-END$$
+    -- Show updated o_rollcall table
+    SELECT * FROM o_rollcall;
+END;
+//
 
 DELIMITER ;
 
--- To call the procedure:
-CALL merge_rollcall();
+CALL merge_rollcall(101, 'rahul', '2024-04-10');
