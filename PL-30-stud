@@ -9,6 +9,13 @@ CREATE TABLE Result (
     Class VARCHAR(30)
 );
 
+-- Insert sample data
+INSERT INTO Stud_Marks VALUES
+('Alice', 995),
+('Bob', 910),
+('Charlie', 860),
+('Dave', 700);
+
 DELIMITER $$
 
 CREATE PROCEDURE proc_Grade()
@@ -47,3 +54,7 @@ BEGIN
 END$$
 
 DELIMITER ;
+
+CALL proc_Grade();
+
+SELECT * FROM Result;
