@@ -1,0 +1,145 @@
+Great — you're asking for a more polished and comprehensive version of **Aggregation and Indexing** on the `Employee` collection. Below is an improved, well-commented, and **production-quality** MongoDB script that not only explains each operation but also follows **best practices**:
+
+---
+
+## ✅ **Question 26: Aggregation and Indexing on Employee Collection (Enhanced Version)**
+
+---
+
+### 🔹 **1. Create Collection and Insert Sample Data**
+
+```javascript
+// Create the Employee collection (optional in MongoDB; happens implicitly on insert)
+db.createCollection("Employee");
+
+// Insert multiple employee documents
+db.Employee.insertMany([
+  { emp_id: 1, emp_name: "John", emp_dept: "HR", salary: 50000 },
+  { emp_id: 2, emp_name: "Alice", emp_dept: "IT", salary: 60000 },
+  { emp_id: 3, emp_name: "Bob", emp_dept: "HR", salary: 55000 },
+  { emp_id: 4, emp_name: "Eve", emp_dept: "Finance", salary: 70000 },
+  { emp_id: 5, emp_name: "Sam", emp_dept: "IT", salary: 65000 }
+]);
+```
+
+---
+
+### 🔹 **2. Aggregation Operations**
+
+#### 🧮 Example 1: Group by Department and Calculate Average Salary
+
+```javascript
+db.Employee.aggregate([
+  {
+    $group: {
+      _id: "$emp_dept",
+      averageSalary: { $avg: "$salary" },
+      totalEmployees: { $sum: 1 }
+    }
+  },
+  { $sort: { averageSalary: -1 } } // Optional: sort by highest average salary
+]);
+```
+
+#### 🧮 Example 2: Filter Employees with Salary > 55000
+
+```javascript
+db.Employee.aggregate([
+  {
+    $match: { salary: { $gt: 55000 } }
+  },
+  {
+    $project: { emp_name: 1, salary: 1, emp_dept: 1, _id: 0 }
+  },
+  { $sort: { salary: -1 } }
+]);
+```
+
+#### 🧮 Example 3: Sort Employees by Salary (Descending)
+
+```javascript
+db.Employee.aggregate([
+  {
+    $sort: { salary: -1 }
+  }
+]);
+```
+
+#### 🧮 Example 4: Calculate Total Salary Per Department
+
+```javascript
+db.Employee.aggregate([
+  {
+    $group: {
+      _id: "$emp_dept",
+      totalSalary: { $sum: "$salary" }
+    }
+  },
+  { $sort: { totalSalary: -1 } }
+]);
+```
+
+#### 🧮 Example 5 (Bonus): List Employees with Department Summary
+
+```javascript
+db.Employee.aggregate([
+  {
+    $group: {
+      _id: "$emp_dept",
+      employees: { $push: "$emp_name" },
+      totalSalary: { $sum: "$salary" },
+      avgSalary: { $avg: "$salary" }
+    }
+  }
+]);
+```
+
+---
+
+### 🔹 **3. Indexing**
+
+#### 📌 Create Indexes
+
+```javascript
+// Create single field index on emp_dept
+db.Employee.createIndex({ emp_dept: 1 });
+
+// Create compound index on emp_dept and salary (emp_dept ascending, salary descending)
+db.Employee.createIndex({ emp_dept: 1, salary: -1 });
+```
+
+#### 📌 Query Using Indexes (and Explain Plans)
+
+```javascript
+// Find all employees in the HR department
+db.Employee.find({ emp_dept: "HR" }).explain("executionStats");
+
+// Find IT employees with salary > 55000 (uses compound index)
+db.Employee.find({ emp_dept: "IT", salary: { $gt: 55000 } }).explain("executionStats");
+```
+
+> `executionStats` helps you analyze how efficiently the query runs — look for `"IXSCAN"` for index usage.
+
+#### 📌 Drop Indexes
+
+```javascript
+// Drop the single field index
+db.Employee.dropIndex({ emp_dept: 1 });
+
+// Drop all indexes (use with caution)
+db.Employee.dropIndexes();
+```
+
+---
+
+### ✅ Best Practices Summary:
+
+* Always create indexes on fields used frequently in filtering or sorting.
+* Compound indexes improve multi-field queries but must match the order of usage.
+* Use `explain("executionStats")` to test whether indexes are actually being used.
+* Combine `$match` early in aggregation for performance.
+* Use `$project` to limit fields returned and reduce payload.
+
+---
+
+Let me know if you want the **same examples using PyMongo, Mongoose, or SQL equivalents** for better comparison or testing!
