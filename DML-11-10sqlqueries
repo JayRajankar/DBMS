@@ -1,0 +1,58 @@
+Database Tables (Simple Schema)
+Students(StudentID, Name, Age)
+Courses(CourseID, CourseName)
+Enrollments(EnrollID, StudentID, CourseID, Grade)
+✅ 1. INNER JOIN – List students with their enrolled courses
+SELECT Students.Name, Courses.CourseName
+FROM Students
+INNER JOIN Enrollments ON Students.StudentID = Enrollments.StudentID
+INNER JOIN Courses ON Enrollments.CourseID = Courses.CourseID;
+________________________________________
+✅ 2. LEFT JOIN – Show all students and their courses (if enrolled)
+SELECT Students.Name, Courses.CourseName
+FROM Students
+LEFT JOIN Enrollments ON Students.StudentID = Enrollments.StudentID
+LEFT JOIN Courses ON Enrollments.CourseID = Courses.CourseID;
+________________________________________
+✅ 3. RIGHT JOIN – Show all courses and students enrolled (if any)
+SELECT Students.Name, Courses.CourseName
+FROM Enrollments
+RIGHT JOIN Courses ON Enrollments.CourseID = Courses.CourseID
+LEFT JOIN Students ON Enrollments.StudentID = Students.StudentID;
+________________________________________
+✅ 4. Simple Subquery – List students who are enrolled in any course
+SELECT Name FROM Students
+WHERE StudentID IN (SELECT StudentID FROM Enrollments);
+________________________________________
+✅ 5. Subquery in SELECT – Show each student with number of courses
+SELECT Name,
+  (SELECT COUNT(*) FROM Enrollments WHERE Enrollments.StudentID = Students.StudentID) AS TotalCourses
+FROM Students;
+________________________________________
+✅ 6. Subquery with NOT IN – Show students not enrolled in any course
+SELECT Name FROM Students
+WHERE StudentID NOT IN (SELECT StudentID FROM Enrollments);
+________________________________________
+✅ 7. View Creation – Create a view showing student-course-grade details
+CREATE VIEW StudentCourseGrades AS
+SELECT Students.Name, Courses.CourseName, Enrollments.Grade
+FROM Students
+JOIN Enrollments ON Students.StudentID = Enrollments.StudentID
+JOIN Courses ON Enrollments.CourseID = Courses.CourseID;
+________________________________________
+✅ 8. Using the View – Show all grades from the view
+SELECT * FROM StudentCourseGrades;
+________________________________________
+✅ 9. Aggregate + JOIN – Show total students in each course
+SELECT Courses.CourseName, COUNT(Enrollments.StudentID) AS TotalStudents
+FROM Courses
+LEFT JOIN Enrollments ON Courses.CourseID = Enrollments.CourseID
+GROUP BY Courses.CourseName;
+________________________________________
+✅ 10. Simple JOIN with condition – Students with Grade 'A'
+SELECT Students.Name, Courses.CourseName
+FROM Students
+JOIN Enrollments ON Students.StudentID = Enrollments.StudentID
+JOIN Courses ON Enrollments.CourseID = Courses.CourseID
+WHERE Enrollments.Grade = 'A';
+________________________________________
