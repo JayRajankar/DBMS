@@ -1,0 +1,94 @@
+Here's the **full MongoDB code from scratch** to:
+
+> ✅ Create a collection named `sites(url, dateofaccess)`
+> ✅ Insert sample data
+> ✅ Use MapReduce to count how many times each site was accessed per month
+
+---
+
+### 🔧 Step 1: Create `sites` collection and insert sample data
+
+```js
+db.sites.insertMany([
+    { url: "https://abc.com", dateofaccess: new Date("2025-05-01T10:00:00Z") },
+    { url: "https://abc.com", dateofaccess: new Date("2025-05-12T12:30:00Z") },
+    { url: "https://abc.com", dateofaccess: new Date("2025-06-03T14:20:00Z") },
+    { url: "https://xyz.com", dateofaccess: new Date("2025-05-10T09:15:00Z") },
+    { url: "https://xyz.com", dateofaccess: new Date("2025-06-11T16:45:00Z") },
+    { url: "https://xyz.com", dateofaccess: new Date("2025-06-12T17:00:00Z") },
+    { url: "https://xyz.com", dateofaccess: new Date("2025-06-13T18:10:00Z") }
+]);
+```
+
+---
+
+### 🧠 Step 2: Define Map Function
+
+```js
+var mapFunction = function() {
+    var date = new Date(this.dateofaccess);
+    var month = (date.getMonth() + 1).toString().padStart(2, '0'); // "01".."12"
+    var year = date.getFullYear();
+    var key = this.url + "-" + year + "-" + month;  // Example: "https://abc.com-2025-05"
+    emit(key, 1);
+};
+```
+
+---
+
+### 🧮 Step 3: Define Reduce Function
+
+```js
+var reduceFunction = function(key, values) {
+    return Array.sum(values);
+};
+```
+
+---
+
+### ▶️ Step 4: Run MapReduce
+
+```js
+db.sites.mapReduce(
+    mapFunction,
+    reduceFunction,
+    {
+        out: "site_access_per_month"
+    }
+);
+```
+
+---
+
+### 📊 Step 5: View the Result
+
+```js
+db.site_access_per_month.find().pretty();
+```
+
+---
+
+### ✅ Example Output:
+
+```json
+{
+  "_id": "https://abc.com-2025-05",
+  "value": 2
+}
+{
+  "_id": "https://abc.com-2025-06",
+  "value": 1
+}
+{
+  "_id": "https://xyz.com-2025-05",
+  "value": 1
+}
+{
+  "_id": "https://xyz.com-2025-06",
+  "value": 3
+}
+```
+
+---
+
+Let me know if you want this grouped differently (e.g., nested fields or by month only).
