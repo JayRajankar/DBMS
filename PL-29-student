@@ -63,3 +63,41 @@ CALL count_student_ranges('BCA');
 
 -- Step 5: Call the procedure for course 'BBA'
 CALL count_student_ranges('BBA');
+-----------------------------------------------------------------------------------------------------------------
+-- Create Table
+CREATE TABLE student_course (
+    roll_no INT PRIMARY KEY,
+    course VARCHAR(50),
+    course_cod VARCHAR(20),
+    sem INT,
+    total_marks INT,
+    percentage FLOAT
+);
+
+-- Insert Data
+INSERT INTO student_course VALUES 
+(101, 'math', 'MTH101', 2, 400, 85),
+(102, 'science', 'SCI102', 2, 400, 67),
+(103, 'history', 'HIS103', 2, 400, 55),
+(104, 'english', 'ENG104', 2, 400, 42);
+
+-- Create Stored Procedure
+DELIMITER //
+
+CREATE PROCEDURE count_students_by_course(IN course_name VARCHAR(50))
+BEGIN
+    SELECT course,
+        SUM(CASE WHEN percentage BETWEEN 70 AND 100 THEN 1 ELSE 0 END) AS high_range,
+        SUM(CASE WHEN percentage BETWEEN 60 AND 69 THEN 1 ELSE 0 END) AS mid_range,
+        SUM(CASE WHEN percentage BETWEEN 50 AND 59 THEN 1 ELSE 0 END) AS low_range,
+        SUM(CASE WHEN percentage < 50 THEN 1 ELSE 0 END) AS below_range
+    FROM student_course
+    WHERE course = course_name
+    GROUP BY course;
+END;
+//
+
+DELIMITER ;
+
+-- Call Procedure
+CALL count_students_by_course('math');
