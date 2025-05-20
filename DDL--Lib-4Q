@@ -1,7 +1,7 @@
 -- Step 1: Create Tables in the Correct Order
 
 CREATE TABLE Author (
-    AuthorId INT PRIMARY KEY,
+    AuthorId INT PRIMARY KEY,8
     AuthorName VARCHAR(50) NOT NULL
 );
 
