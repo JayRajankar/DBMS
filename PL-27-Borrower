@@ -1,121 +1,77 @@
-Here's the **complete solution** for your PL/SQL assignment, including:
-
-1. Table creation for `Borrower` and `Fine`
-2. Sample insert statements
-3. The full PL/SQL block as requested (with user input, fine logic, control structures, and exception handling)
-
----
-
-### 🧱 Step 1: Create Tables
-
-```sql
--- Borrower Table
-CREATE TABLE Borrower (
-    Rollin        NUMBER PRIMARY KEY,
-    Name          VARCHAR2(50),
-    DateofIssue   DATE,
-    NameofBook    VARCHAR2(100),
-    Status        CHAR(1) -- 'I' for Issued, 'R' for Returned
+-- Step 1: Create Tables
+CREATE TABLE borrower (
+    rollin INT PRIMARY KEY,
+    name VARCHAR(50),
+    dateofissue DATE,
+    nameofbook VARCHAR(100),
+    status CHAR(1)
 );
 
--- Fine Table
-CREATE TABLE Fine (
-    Roll_no   NUMBER,
-    Date      DATE,
-    Amt       NUMBER,
-    FOREIGN KEY (Roll_no) REFERENCES Borrower(Rollin)
+CREATE TABLE fine (
+    roll_no INT,
+    date DATE,
+    amt INT,
+    FOREIGN KEY (roll_no) REFERENCES borrower(rollin)
 );
-```
 
----
+-- Step 2: Insert Sample Data
+INSERT INTO borrower VALUES
+(101, 'rahul', '2024-04-01', 'introduction to sql', 'I'),
+(102, 'neha', '2024-03-20', 'database management', 'I'),
+(103, 'amit', '2024-03-10', 'programming in java', 'I'),
+(104, 'priya', '2024-04-05', 'web development essentials', 'I');
 
-### 🧪 Step 2: Insert Sample Data
+DELIMITER //
 
-```sql
--- Sample Borrowers
-INSERT INTO Borrower VALUES (101, 'Aryan', TO_DATE('2024-04-10', 'YYYY-MM-DD'), 'Atomic Habits', 'I');
-INSERT INTO Borrower VALUES (102, 'Riya', TO_DATE('2024-05-01', 'YYYY-MM-DD'), 'Wings of Fire', 'I');
-INSERT INTO Borrower VALUES (103, 'Neha', TO_DATE('2024-05-15', 'YYYY-MM-DD'), 'The Alchemist', 'R');
-```
-
----
-
-### ✅ Step 3: PL/SQL Code Block
-
-```sql
-SET SERVEROUTPUT ON;
-
-DECLARE
-    v_rollin        Borrower.Rollin%TYPE := &Enter_Rollin; -- user input
-    v_bookname      Borrower.NameofBook%TYPE := '&Enter_Book_Name'; -- user input
-    v_dateofissue   DATE;
-    v_status        CHAR(1);
-    v_days          NUMBER;
-    v_fine          NUMBER := 0;
-
+CREATE PROCEDURE process_fine(
+    IN user_roll INT,
+    IN user_book VARCHAR(100)
+)
 BEGIN
-    -- Fetch date of issue and status
-    SELECT DateofIssue, Status
-    INTO v_dateofissue, v_status
-    FROM Borrower
-    WHERE Rollin = v_rollin AND NameofBook = v_bookname;
+    DECLARE issue_date DATE;
+    DECLARE days_late INT;
+    DECLARE fine_amount INT DEFAULT 0;
+    DECLARE book_status CHAR(1);
 
-    IF v_status = 'I' THEN
-        v_days := TRUNC(SYSDATE - v_dateofissue);
-
-        -- Calculate fine
-        IF v_days BETWEEN 15 AND 30 THEN
-            v_fine := v_days * 5;
-        ELSIF v_days > 30 THEN
-            v_fine := (30 * 5) + ((v_days - 30) * 50);
-        END IF;
-
-        -- Update status
-        UPDATE Borrower
-        SET Status = 'R'
-        WHERE Rollin = v_rollin AND NameofBook = v_bookname;
-
-        -- Insert fine if applicable
-        IF v_fine > 0 THEN
-            INSERT INTO Fine (Roll_no, Date, Amt)
-            VALUES (v_rollin, SYSDATE, v_fine);
-        END IF;
-
-        DBMS_OUTPUT.PUT_LINE('Book returned successfully.');
-        IF v_fine > 0 THEN
-            DBMS_OUTPUT.PUT_LINE('Fine amount: Rs. ' || v_fine);
-        ELSE
-            DBMS_OUTPUT.PUT_LINE('No fine applicable.');
-        END IF;
-    ELSE
-        DBMS_OUTPUT.PUT_LINE('Book is already returned.');
+    -- Check if such a record exists first
+    IF (SELECT COUNT(*) 
+        FROM borrower 
+        WHERE rollin = user_roll AND nameofbook = user_book) = 0 THEN
+        SIGNAL SQLSTATE '45000' 
+        SET MESSAGE_TEXT = 'No record found for the given roll number and book name';
     END IF;
 
-EXCEPTION
-    WHEN NO_DATA_FOUND THEN
-        DBMS_OUTPUT.PUT_LINE('No such record found.');
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('An error occurred: ' || SQLERRM);
+    -- Fetch the values
+    SELECT dateofissue, status INTO issue_date, book_status
+    FROM borrower 
+    WHERE rollin = user_roll AND nameofbook = user_book;
+
+    -- Calculate days late
+    SET days_late = DATEDIFF(CURDATE(), issue_date);
+
+    -- Fine calculation
+    IF days_late >= 15 AND days_late <= 30 THEN
+        SET fine_amount = days_late * 5;
+    ELSEIF days_late > 30 THEN
+        SET fine_amount = days_late * 50;
+    END IF;
+
+    -- Insert into fine table if applicable
+    IF fine_amount > 0 THEN
+        INSERT INTO fine (roll_no, date, amt)
+        VALUES (user_roll, CURDATE(), fine_amount);
+    END IF;
+
+    -- Update status to 'R'
+    UPDATE borrower 
+    SET status = 'R'
+    WHERE rollin = user_roll AND nameofbook = user_book;
+
+    -- Return result
+    SELECT user_roll AS roll_no, user_book AS book, fine_amount AS fine;
 END;
-/
-```
+//
 
----
+DELIMITER ;
 
-### 🧾 Sample Run
-
-If you input:
-
-```text
-Enter_Rollin = 101
-Enter_Book_Name = 'Atomic Habits'
-```
-
-And the current date is `2025-05-20`, output will be:
-
-```
-Book returned successfully.
-Fine amount: Rs. 1800
-```
-
-Let me know if you want this converted into a **stored procedure** or integrated with a trigger.
+CALL process_fine(101, 'introduction to sql');
