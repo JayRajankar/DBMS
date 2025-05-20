@@ -1,0 +1,28 @@
+CREATE TABLE Borrower (
+    ID INT AUTO_INCREMENT PRIMARY KEY,
+    Rollin INT NOT NULL,
+    Name VARCHAR(100),
+    DateofIssue DATE,
+    NameofBook VARCHAR(100),
+    Status CHAR(1)  -- 'I' for Issued, 'R' for Returned
+);
+
+-- Insert sample data
+INSERT INTO Borrower (Rollin, Name, DateofIssue, NameofBook, Status) VALUES
+(101, 'Alice', '2025-05-01', 'Data Structures', 'I'),
+(102, 'Bob', '2025-05-05', 'Operating Systems', 'R'),
+(103, 'Charlie', '2025-05-03', 'Database Systems', 'I');
+CREATE VIEW IssuedBooks AS
+SELECT Rollin, Name, NameofBook, DateofIssue
+FROM Borrower
+WHERE Status = 'I';
+
+CREATE INDEX idx_rollin_book
+ON Borrower (Rollin, NameofBook);
+
+CREATE VIEW LibraryUsers AS
+SELECT * FROM Borrower;
+
+-- No ALTER TABLE needed here because ID column is already created as auto_increment primary key
+select * from Borrower;
+select * from IssuedBooks;
