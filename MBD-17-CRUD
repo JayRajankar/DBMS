@@ -1,126 +1,88 @@
-Thanks for the clarification! Here's a more **comprehensive and well-structured version** of CRUD operations using MongoDB for the `Orders` collection, with realistic examples and best practices. This version includes:
-
-* Comments for clarity
-* Input validation examples
-* Use of `insertMany`, `update with upsert`, projections, and sorting
-* Clean structure for better understanding
+Got it! Here's a more **expanded set of MongoDB CRUD operations** with **additional entries** for the `Orders` collection.
 
 ---
 
-## ✅ **CRUD Operations – Enhanced Example (MongoDB with JavaScript)**
+### ✅ **Insert Multiple Orders (More Entries)**
 
-### 🔹 **Create (Insert)**
-
-```javascript
-// Insert a single order
-db.Orders.insertOne({
-  cust_id: 101,
-  amount: 250,
-  status: "Pending",
-  items: ["Keyboard", "Mouse"],
-  order_date: new Date("2025-05-20")
-});
-
-// Insert multiple orders
+```js
 db.Orders.insertMany([
-  {
-    cust_id: 102,
-    amount: 500,
-    status: "Delivered",
-    items: ["Laptop"],
-    order_date: new Date("2025-05-18")
-  },
-  {
-    cust_id: 103,
-    amount: 120,
-    status: "Pending",
-    items: ["Headphones"],
-    order_date: new Date("2025-05-19")
-  }
-]);
+  { cust_id: 107, amount: 1200, status: "Pending" },
+  { cust_id: 108, amount: 6500, status: "Delivered" },
+  { cust_id: 109, amount: 3400, status: "Shipped" },
+  { cust_id: 110, amount: 500, status: "Cancelled" },
+  { cust_id: 111, amount: 2000, status: "Delivered" },
+  { cust_id: 112, amount: 950, status: "Pending" },
+  { cust_id: 113, amount: 7600, status: "Shipped" },
+  { cust_id: 114, amount: 1800, status: "Confirmed" },
+  { cust_id: 115, amount: 2200, status: "Pending" },
+  { cust_id: 116, amount: 10000, status: "Delivered" }
+])
 ```
 
 ---
 
-### 🔹 **Read (Query)**
+### ✅ **Additional CRUD Operations**
 
-```javascript
-// Find all orders
-db.Orders.find();
+#### 🔸 Find orders where status is not "Cancelled"
 
-// Find all "Pending" orders
-db.Orders.find({ status: "Pending" });
-
-// Find orders with amount greater than 150, sorted by amount descending
-db.Orders.find({ amount: { $gt: 150 } }).sort({ amount: -1 });
-
-// Find order by customer ID with only status and amount fields
-db.Orders.findOne(
-  { cust_id: 102 },
-  { projection: { status: 1, amount: 1, _id: 0 } }
-);
+```js
+db.Orders.find({ status: { $ne: "Cancelled" } })
 ```
 
----
+#### 🔸 Find orders between ₹2000 and ₹8000
 
-### 🔹 **Update**
+```js
+db.Orders.find({ amount: { $gte: 2000, $lte: 8000 } })
+```
 
-```javascript
-// Update the status of a specific order
-db.Orders.updateOne(
-  { cust_id: 101 },
-  { $set: { status: "Shipped" } }
-);
+#### 🔸 Update status from "Pending" to "Processing"
 
-// Update multiple pending orders and add a note
+```js
 db.Orders.updateMany(
   { status: "Pending" },
-  {
-    $set: { status: "Processing" },
-    $currentDate: { lastUpdated: true }
-  }
-);
-
-// Upsert example: insert if not exists
-db.Orders.updateOne(
-  { cust_id: 999 },
-  {
-    $set: {
-      amount: 1000,
-      status: "New",
-      items: ["Smartphone"]
-    }
-  },
-  { upsert: true }
-);
+  { $set: { status: "Processing" } }
+)
 ```
 
----
+#### 🔸 Increase amount by ₹200 for all "Shipped" orders
 
-### 🔹 **Delete**
-
-```javascript
-// Delete a specific order by customer ID
-db.Orders.deleteOne({ cust_id: 103 });
-
-// Delete all delivered orders
-db.Orders.deleteMany({ status: "Delivered" });
+```js
+db.Orders.updateMany(
+  { status: "Shipped" },
+  { $inc: { amount: 200 } }
+)
 ```
 
----
+#### 🔸 Find and project only `cust_id` and `amount` (hide `_id`)
 
-✅ **Bonus – Count and Aggregate**
+```js
+db.Orders.find({}, { cust_id: 1, amount: 1, _id: 0 })
+```
 
-```javascript
-// Count orders by status
-db.Orders.countDocuments({ status: "Processing" });
+#### 🔸 Delete all orders with amount > ₹9000
 
-// Aggregate total amount per status
+```js
+db.Orders.deleteMany({ amount: { $gt: 9000 } })
+```
+
+#### 🔸 Sort all orders by amount (ascending)
+
+```js
+db.Orders.find().sort({ amount: 1 })
+```
+
+#### 🔸 Count number of orders by status
+
+```js
 db.Orders.aggregate([
-  { $group: { _id: "$status", totalAmount: { $sum: "$amount" } } }
-]);
+  { $group: { _id: "$status", count: { $sum: 1 } } }
+])
 ```
 
----
+#### 🔸 Find top 3 highest value orders
 
-Let me know if you want this for another collection (like `Users`, `Products`, etc.) or want the same in **Python (PyMongo)** or **Node.js (Mongoose)**.
+```js
+db.Orders.find().sort({ amount: -1 }).limit(3)
+```
+
+Let me know if you want to go into **pagination**, **filtering with regex**, or **admin-level commands** next!
